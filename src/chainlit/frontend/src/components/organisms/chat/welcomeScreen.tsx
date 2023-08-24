@@ -32,7 +32,7 @@ const WelcomeScreen = () => {
           flexDirection: 'column'
         }}
       >
-        {pSettings?.markdown ? (
+        {/* {pSettings?.markdown ? (
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
@@ -46,7 +46,7 @@ const WelcomeScreen = () => {
           >
             {pSettings?.markdown}
           </ReactMarkdown>
-        ) : null}
+        ) : null} */}
       </Box>
     </Box>
   );

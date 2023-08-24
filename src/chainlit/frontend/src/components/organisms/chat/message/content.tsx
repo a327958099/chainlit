@@ -120,10 +120,11 @@ export default memo(function MessageContent({
         sx={{
           width: '100%',
           minHeight: '20px',
-          fontSize: '1rem',
+          fontSize: '.9rem',
           lineHeight: '1.5rem',
-          fontFamily: 'Inter',
-          fontWeight: authorIsUser ? 500 : 300
+          // fontFamily: 'Inter',
+          // fontWeight: authorIsUser ? 500 : 300
+          fontWeight: 400
         }}
         component="div"
       >

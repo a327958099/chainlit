@@ -121,7 +121,7 @@ const Input = ({ onSubmit, onReply }: Props) => {
       multiline
       variant="standard"
       autoComplete="false"
-      placeholder="Type your message here..."
+      placeholder="在此处输入您的消息..."
       disabled={disabled}
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={handleKeyDown}

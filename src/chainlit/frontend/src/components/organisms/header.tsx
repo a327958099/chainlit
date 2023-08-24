@@ -144,7 +144,7 @@ export default function Header() {
 
   return (
     <AppBar elevation={0} color="transparent" position="static">
-      <Toolbar
+      {/* <Toolbar
         sx={{
           minHeight: '60px !important',
           borderBottomWidth: '1px',
@@ -171,7 +171,7 @@ export default function Header() {
           <GithubButton href={pSettings?.ui?.github} />
           <UserButton />
         </Stack>
-      </Toolbar>
+      </Toolbar> */}
     </AppBar>
   );
 }

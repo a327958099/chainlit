@@ -43,7 +43,7 @@ export default function InputBox({ onSubmit, onReply }: Props) {
         </Stack> */}
         {/* )} */}
       </Box>
-      <WaterMark />
+      {/* <WaterMark /> */}
     </Box>
   );
 }

@@ -17,11 +17,10 @@ export default function AppWrapper() {
   if (isFirstRender && pSettings === undefined) {
     ChainlitClient.getProjectSettings().then((res: IProjectSettings) => {
       setPSettings(res);
-
       setAppSettings((prev) => ({
-        ...prev,
-        expandAll: !!res.ui.default_expand_messages,
-        hideCot: !!res.ui.hide_cot
+        ...prev
+        // expandAll: !!res.ui.default_expand_messages,
+        // hideCot: !!res.ui.hide_cot
       }));
     });
   }

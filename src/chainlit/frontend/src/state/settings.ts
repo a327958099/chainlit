@@ -2,7 +2,7 @@ import { atom } from 'recoil';
 
 type ThemeVariant = 'dark' | 'light';
 
-const defaultTheme = 'light';
+const defaultTheme = 'dark';
 
 const preferredTheme = localStorage.getItem(
   'themeVariant'
@@ -19,8 +19,8 @@ export const settingsState = atom<{
   key: 'AppSettings',
   default: {
     open: false,
-    expandAll: false,
-    hideCot: false,
+    expandAll: true,
+    hideCot: true,
     theme
   }
 });
