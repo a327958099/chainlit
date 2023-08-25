@@ -90,7 +90,6 @@ export default memo(function Socket() {
     }
     // 获取URL参数
     const userParams = extractParams(location.href)
-    console.log(userParams);
     const socket = io(wsEndpoint, {
       path: '/ws/socket.io',
       extraHeaders: {
