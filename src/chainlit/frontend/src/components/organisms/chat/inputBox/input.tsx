@@ -108,7 +108,7 @@ const Input = ({ onSubmit, onReply }: Props) => {
   );
 
   const endAdornment = (
-    <IconButton disabled={disabled} color="inherit" onClick={() => submit()}>
+    <IconButton size="small" disabled={disabled} color="inherit" onClick={() => submit()}>
       <SendIcon />
     </IconButton>
   );
@@ -151,16 +151,17 @@ const Input = ({ onSubmit, onReply }: Props) => {
       sx={{
         backgroundColor: 'background.paper',
         borderRadius: 1,
-        border: (theme) => `1px solid ${theme.palette.divider}`,
+        border: (theme) => `0px solid ${theme.palette.divider}`,
         boxShadow: 'box-shadow: 0px 2px 4px 0px #0000000D',
 
         textarea: {
+          fontSize: '14px',
           height: '34px',
           maxHeight: '30vh',
           overflowY: 'auto !important',
           resize: 'none',
-          paddingBottom: '0.75rem',
-          paddingTop: '0.75rem',
+          paddingBottom: '0.35rem',
+          paddingTop: '0.40rem',
           color: 'text.primary',
           lineHeight: '24px'
         }

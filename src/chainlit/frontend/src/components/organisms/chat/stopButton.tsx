@@ -27,8 +27,14 @@ export default function StopButton() {
         startIcon={<CloseIcon />}
         variant="contained"
         onClick={handleClick}
+        sx={{
+          backgroundColor: '#444654',
+          "&:hover": {
+            backgroundColor: '#626576',
+          },
+        }}
       >
-        Stop task
+        终止任务
       </GreyButton>
     </Box>
   );

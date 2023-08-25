@@ -233,7 +233,7 @@ export default function HistoryButton({ onClick }: Props) {
   return (
     <div>
       {menu}
-      <Tooltip title="Show history">
+      <Tooltip title="历史记录">
         <IconButton
           color="inherit"
           onClick={() => toggleChatHistoryMenu(!chatHistory.open)}
