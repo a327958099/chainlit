@@ -19,8 +19,8 @@ export const settingsState = atom<{
   key: 'AppSettings',
   default: {
     open: false,
-    expandAll: true,
-    hideCot: true,
+    expandAll: false,
+    hideCot: false,
     theme
   }
 });

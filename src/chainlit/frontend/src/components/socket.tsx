@@ -56,31 +56,29 @@ export default memo(function Socket() {
   const setActions = useSetRecoilState(actionState);
   const setChatSettings = useSetRecoilState(chatSettingsState);
   const resetChatSettingsValue = useResetRecoilState(chatSettingsValueState);
-
   // 把URL参数转换成对象
-  const extractParams = ((url: string) =>{
+  const extractParams = (url: string) => {
     const params: { [key: string]: string | null } = {};
     if (url.includes('?')) {
-        const query_string = url.split('?')[1];
-        const pairs = query_string.split('&');
-        for (const pair of pairs) {
-            if (pair.includes('=')) {
-                const key_value = pair.split('=');
-                if (key_value.length > 1) {
-                    const key = key_value[0];
-                    const value = key_value[1];
-                    params[key] = value;
-                } else {
-                    params[pair] = null;
-                }
-            } else {
-                params[pair] = null;
-            }
+      const query_string = url.split('?')[1];
+      const pairs = query_string.split('&');
+      for (const pair of pairs) {
+        if (pair.includes('=')) {
+          const key_value = pair.split('=');
+          if (key_value.length > 1) {
+            const key = key_value[0];
+            const value = key_value[1];
+            params[key] = value;
+          } else {
+            params[pair] = null;
+          }
+        } else {
+          params[pair] = null;
         }
+      }
     }
     return params;
-  })
-
+  };
   useEffect(() => {
     if (authenticating || !pSettings) return;
 
@@ -89,7 +87,7 @@ export default memo(function Socket() {
       session.socket.close();
     }
     // 获取URL参数
-    const userParams = extractParams(location.href)
+    const userParams = extractParams(location.href);
     const socket = io(wsEndpoint, {
       path: '/ws/socket.io',
       extraHeaders: {
