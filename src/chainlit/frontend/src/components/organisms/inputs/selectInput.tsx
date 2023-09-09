@@ -2,7 +2,7 @@ import { primary } from 'palette';
 import { grey } from 'palette';
 import React from 'react';
 
-import { KeyboardArrowDown } from '@mui/icons-material';
+import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import { MenuItem, SxProps } from '@mui/material';
 import MSelect, { SelectChangeEvent, SelectProps } from '@mui/material/Select';
 
@@ -86,6 +86,7 @@ export default function SelectInput({
   value,
   placeholder = 'Select',
   renderLabel,
+  onClose,
   sx,
   iconSx,
   ...rest
@@ -103,6 +104,7 @@ export default function SelectInput({
     >
       <MSelect
         {...rest}
+        onClose={onClose}
         labelId={id}
         value={value?.toString()}
         onChange={onChange}

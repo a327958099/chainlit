@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
-import { useIsFirstRender, useToggle } from 'usehooks-ts';
+import { useEffect, useRef, useState } from 'react';
+import { useRecoilState } from 'recoil';
+import { useToggle } from 'usehooks-ts';
 
 import RestoreIcon from '@mui/icons-material/Restore';
 import {
@@ -18,8 +18,11 @@ import DialogTitle from '@mui/material/DialogTitle';
 
 import ErrorBoundary from 'components/atoms/errorBoundary';
 
-import { clientState } from 'state/client';
+import { useApi } from 'hooks/useApi';
+
 import { playgroundState } from 'state/playground';
+
+import { IPlayground } from 'types/playground';
 
 import ActionBar from './actionBar';
 import BasicPromptPlayground from './basic';
@@ -30,27 +33,29 @@ import ModelSettings from './modelSettings';
 import SubmitButton from './submitButton';
 
 export default function PromptPlayground() {
-  const client = useRecoilValue(clientState);
   const [playground, setPlayground] = useRecoilState(playgroundState);
 
-  const [restoredTime, setRestoredTime] = useState(0);
-  const [providersError, setProvidersError] = useState();
-  const [isDrawerOpen, toggleDrawer] = useToggle(false);
+  const { data, error, mutate } = useApi<IPlayground>('/project/llm-providers');
 
-  const isFirstRender = useIsFirstRender();
+  const [restoredTime, setRestoredTime] = useState(0);
+  const [isDrawerOpen, toggleDrawer] = useToggle(false);
+  const chatPromptScrollRef = useRef<HTMLDivElement | null>(null);
+
   const theme = useTheme();
   const isSmallScreen = useMediaQuery<Theme>((theme) =>
     theme.breakpoints.down('md')
   );
 
-  if (isFirstRender) {
-    client
-      .getLLMProviders()
-      .then((res) =>
-        setPlayground((old) => ({ ...old, providers: res.providers }))
-      )
-      .catch((err) => setProvidersError(err));
-  }
+  useEffect(() => {
+    // Refresh the providers when the playground is opened
+    if (!playground?.prompt) return;
+    mutate();
+  }, [playground?.prompt]);
+
+  useEffect(() => {
+    if (!data) return;
+    setPlayground((old) => ({ ...old, providers: data.providers }));
+  }, [data]);
 
   const restore = () => {
     if (playground) {
@@ -66,6 +71,8 @@ export default function PromptPlayground() {
     setPlayground((old) => ({ ...old, prompt: undefined }));
   };
 
+  // Only render the playground if it's open and we have providers.
+  // Prevents the "no provider" error from being thrown and a playground flash
   if (!playground?.prompt) {
     return null;
   }
@@ -100,7 +107,7 @@ export default function PromptPlayground() {
       <DialogContent sx={{ display: 'flex', direction: 'row', padding: 3 }}>
         <ErrorBoundary prefix="Prompt Playground error">
           <Stack gap={3} width="100%">
-            {providersError ? (
+            {error ? (
               <Alert severity="error">
                 An error occurred while fetching providers settings
               </Alert>
@@ -121,6 +128,7 @@ export default function PromptPlayground() {
                 prompt={playground.prompt}
               />
               <ChatPromptPlayground
+                ref={chatPromptScrollRef}
                 restoredTime={restoredTime}
                 hasTemplate={hasTemplate}
                 prompt={playground.prompt}
@@ -141,7 +149,14 @@ export default function PromptPlayground() {
             <RestoreIcon />
           </IconButton>
         </Tooltip>
-        <SubmitButton />
+        <SubmitButton
+          onSubmit={() => {
+            if (!chatPromptScrollRef?.current) return;
+
+            chatPromptScrollRef.current.scrollTop =
+              chatPromptScrollRef.current.scrollHeight;
+          }}
+        />
       </ActionBar>
     </Dialog>
   );

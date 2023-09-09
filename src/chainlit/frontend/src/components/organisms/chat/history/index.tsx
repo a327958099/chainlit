@@ -4,7 +4,7 @@ import { grey } from 'palette';
 import { useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 
-import { AutoDelete } from '@mui/icons-material';
+import AutoDelete from '@mui/icons-material/AutoDelete';
 import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
 import {
   IconButton,
@@ -15,7 +15,9 @@ import {
   Typography
 } from '@mui/material';
 
-import { MessageHistory, chatHistoryState } from 'state/chatHistory';
+import { chatHistoryState } from 'state/chatHistory';
+
+import { MessageHistory } from 'types/chatHistory';
 
 interface Props {
   onClick: (content: string) => void;
@@ -88,7 +90,7 @@ export default function HistoryButton({ onClick }: Props) {
         color="text.primary"
         sx={{ fontSize: '14px', fontWeight: 700 }}
       >
-        Last messages
+        历史记录
       </Typography>
       <IconButton
         onClick={() => setChatHistory((old) => ({ ...old, messages: [] }))}

@@ -7,23 +7,18 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Box, IconButton, Stack, Typography } from '@mui/material';
 import { grey } from '@mui/material/colors';
 
-import EditorWrapper from 'components/organisms/playground/editor/wrapper';
+import EditorWrapper from 'components/organisms/playground/editor/EditorWrapper';
 
 import 'draft-js/dist/Draft.css';
 
-const styleMap = {
-  COMPLETION: {
-    backgroundColor: '#d2f4d3',
-    color: 'black',
-    borderRadius: '2px'
-  }
-};
+import MessageWrapper from './MessageWrapper';
 
 interface Props {
   completion?: string;
+  chatMode?: boolean;
 }
 
-export default function Completion({ completion }: Props) {
+export default function Completion({ completion, chatMode }: Props) {
   const [state, setState] = useState(EditorState.createEmpty());
   const [isCompletionOpen, setCompletionOpen] = useState(true);
 
@@ -60,8 +55,34 @@ export default function Completion({ completion }: Props) {
     return EditorState.forceSelection(es, ncs.getSelectionAfter());
   };
 
-  return (
-    <Box sx={{ marginTop: 2 }}>
+  const renderEditor = () => (
+    <EditorWrapper
+      className="completion-editor"
+      clipboardValue={state.getCurrentContent().getPlainText()}
+      sxChildren={{
+        borderColor: (theme) => theme.palette.success.main,
+        '&:hover': {
+          borderColor: (theme) => theme.palette.success.main
+        }
+      }}
+    >
+      <Editor
+        editorState={state}
+        onChange={(nextState) => {
+          // Read only mode, force content but preserve selection
+          nextState = EditorState.push(
+            nextState,
+            state.getCurrentContent(),
+            'insert-characters'
+          );
+          setState(nextState);
+        }}
+      />
+    </EditorWrapper>
+  );
+
+  return !chatMode ? (
+    <Box marginTop={2}>
       <Stack
         sx={{
           flexDirection: 'row',
@@ -92,25 +113,10 @@ export default function Completion({ completion }: Props) {
           marginTop: 2
         }}
       >
-        <EditorWrapper
-          className="completion-editor"
-          clipboardValue={state.getCurrentContent().getPlainText()}
-        >
-          <Editor
-            customStyleMap={styleMap}
-            editorState={state}
-            onChange={(nextState) => {
-              // Read only mode, force content but preserve selection
-              nextState = EditorState.push(
-                nextState,
-                state.getCurrentContent(),
-                'insert-characters'
-              );
-              setState(nextState);
-            }}
-          />
-        </EditorWrapper>
+        {renderEditor()}
       </Box>
     </Box>
+  ) : (
+    <MessageWrapper role="ASSISTANT">{renderEditor()}</MessageWrapper>
   );
 }

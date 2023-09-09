@@ -4,17 +4,19 @@ import { useRecoilValue } from 'recoil';
 
 import { Box, Stack } from '@mui/material';
 
-import { IAction } from 'state/action';
-import { INestedMessage, highlightMessage } from 'state/chat';
-import { IMessageElement } from 'state/element';
+import { highlightMessage } from 'state/chat';
 import { settingsState } from 'state/settings';
 
+import { IAction } from 'types/action';
+import { INestedMessage } from 'types/chat';
+import { IMessageElement } from 'types/element';
+
+import AskUploadButton from './AskUploadButton';
 import Author, { authorBoxWidth } from './author';
 import Buttons from './buttons';
 import MessageContent from './content';
 import DetailsButton from './detailsButton';
 import Messages from './messages';
-import UploadButton from './uploadButton';
 
 interface Props {
   message: INestedMessage;
@@ -115,7 +117,9 @@ const Message = ({
               onClick={() => setShowDetails(!showDetails)}
               loading={isRunning}
             />
-            {!isRunning && isLast && message.waitForAnswer && <UploadButton />}
+            {!isRunning && isLast && message.waitForAnswer && (
+              <AskUploadButton />
+            )}
             <Buttons message={message} actions={actions} />
           </Stack>
         </Stack>

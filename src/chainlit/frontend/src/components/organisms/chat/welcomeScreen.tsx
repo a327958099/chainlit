@@ -7,6 +7,7 @@ import { Box, Link } from '@mui/material';
 import Code from 'components/atoms/Code';
 
 import { projectSettingsState } from 'state/project';
+import { log } from 'console';
 
 const WelcomeScreen = () => {
   const pSettings = useRecoilValue(projectSettingsState);
@@ -25,14 +26,12 @@ const WelcomeScreen = () => {
           m: 'auto',
           color: 'text.primary',
           lineHeight: '25px',
-          fontSize: '1rem',
-          fontFamily:
-            '-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji',
+          fontSize: '.9rem',
           display: 'flex',
           flexDirection: 'column'
         }}
       >
-        {/* {pSettings?.markdown ? (
+        {pSettings?.markdown ? (
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
@@ -46,7 +45,7 @@ const WelcomeScreen = () => {
           >
             {pSettings?.markdown}
           </ReactMarkdown>
-        ) : null} */}
+        ) : null}
       </Box>
     </Box>
   );

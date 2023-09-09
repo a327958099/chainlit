@@ -13,9 +13,9 @@ import {
 import { useState } from 'react';
 import { useIsFirstRender } from 'usehooks-ts';
 
-import EditorWrapper from 'components/organisms/playground/editor/wrapper';
+import EditorWrapper from 'components/organisms/playground/editor/EditorWrapper';
 
-import { IPrompt } from 'state/chat';
+import { IPrompt } from 'types/chat';
 
 import Variable from './variable';
 

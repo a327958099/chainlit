@@ -1,12 +1,15 @@
 import os
 
 from fastapi.responses import StreamingResponse
+from langchain.llms.fake import FakeListLLM
 
 import chainlit as cl
 from chainlit.input_widget import Select, Slider
 from chainlit.playground.config import BaseProvider, add_llm_provider
+from chainlit.playground.providers.langchain import LangchainGenericProvider
 
 os.environ["TEST_LLM_API_KEY"] = "sk..."
+
 
 class TestLLMProvider(BaseProvider):
     async def create_completion(self, request):
@@ -71,5 +74,16 @@ ChatTestLLM = TestLLMProvider(
     is_chat=True,
 )
 
+llm = FakeListLLM(responses=["This is the test completion"])
+
+LangchainTestLLM = LangchainGenericProvider(
+    id="test-langchain",
+    name="TestLangchain",
+    llm=llm,
+    is_chat=False,
+)
+
+
 add_llm_provider(TestLLM)
 add_llm_provider(ChatTestLLM)
+add_llm_provider(LangchainTestLLM)

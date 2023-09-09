@@ -1,23 +1,21 @@
-import { ClientError } from 'api';
+import { ChainlitAPI } from 'api/chainlitApi';
 import { cloneDeep } from 'lodash';
 import { useState } from 'react';
-import { toast } from 'react-hot-toast';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
 import AccentButton from 'components/atoms/buttons/accentButton';
 import RegularButton from 'components/atoms/buttons/button';
 
-import { clientState } from 'state/client';
 import { playgroundState } from 'state/playground';
-import { userEnvState } from 'state/user';
+import { accessTokenState, userEnvState } from 'state/user';
 
 import { getProviders } from './helpers';
 
-export default function SubmitButton() {
+export default function SubmitButton({ onSubmit }: { onSubmit: () => void }) {
   const [completionController, setCompletionController] = useState<
     AbortController | undefined
   >();
-  const client = useRecoilValue(clientState);
+  const accessToken = useRecoilValue(accessTokenState);
   const [playground, setPlayground] = useRecoilState(playgroundState);
 
   const userEnv = useRecoilValue(userEnvState);
@@ -42,29 +40,33 @@ export default function SubmitButton() {
         };
       });
 
-      await client.getCompletion(prompt, userEnv, controller, (done, token) => {
-        if (done) {
-          setCompletionController(undefined);
-          return;
-        }
-        setPlayground((old) => {
-          if (!old?.prompt) return old;
+      await ChainlitAPI.getCompletion(
+        prompt,
+        userEnv,
+        controller,
+        accessToken,
+        (done, token) => {
+          onSubmit && onSubmit();
 
-          return {
-            ...old,
-            prompt: {
-              ...old.prompt!,
-              completion: (old.prompt?.completion || '') + token
-            }
-          };
-        });
-      });
+          if (done) {
+            setCompletionController(undefined);
+            return;
+          }
+          setPlayground((old) => {
+            if (!old?.prompt) return old;
+
+            return {
+              ...old,
+              prompt: {
+                ...old.prompt!,
+                completion: (old.prompt?.completion || '') + token
+              }
+            };
+          });
+        }
+      );
     } catch (err) {
       setCompletionController(undefined);
-
-      if (err instanceof ClientError) {
-        toast.error(err.toString());
-      }
     }
   };
 

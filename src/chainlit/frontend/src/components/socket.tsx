@@ -11,27 +11,24 @@ import io from 'socket.io-client';
 
 import { useAuth } from 'hooks/auth';
 
-import { IAction, actionState } from 'state/action';
+import { actionState } from 'state/action';
 import {
-  IMessage,
-  IMessageUpdate,
-  IToken,
   askUserState,
   chatSettingsState,
   chatSettingsValueState,
+  fileSpecState,
   loadingState,
   messagesState,
   sessionState,
   tokenCountState
 } from 'state/chat';
-import {
-  IElement,
-  avatarState,
-  elementState,
-  tasklistState
-} from 'state/element';
+import { avatarState, elementState, tasklistState } from 'state/element';
 import { projectSettingsState } from 'state/project';
 import { sessionIdState, userEnvState } from 'state/user';
+
+import { IAction } from 'types/action';
+import { IMessage, IMessageUpdate, IToken } from 'types/chat';
+import { IElement } from 'types/element';
 
 import { TFormInput } from './organisms/FormInput';
 
@@ -49,6 +46,7 @@ export default memo(function Socket() {
   const [session, setSession] = useRecoilState(sessionState);
   const setMessages = useSetRecoilState(messagesState);
   const setTokenCount = useSetRecoilState(tokenCountState);
+  const setFileSpecState = useSetRecoilState(fileSpecState);
   const setAskUser = useSetRecoilState(askUserState);
   const setElements = useSetRecoilState(elementState);
   const setAvatars = useSetRecoilState(avatarState);
@@ -56,6 +54,7 @@ export default memo(function Socket() {
   const setActions = useSetRecoilState(actionState);
   const setChatSettings = useSetRecoilState(chatSettingsState);
   const resetChatSettingsValue = useResetRecoilState(chatSettingsValueState);
+
   // 把URL参数转换成对象
   const extractParams = (url: string) => {
     const params: { [key: string]: string | null } = {};
@@ -79,6 +78,8 @@ export default memo(function Socket() {
     }
     return params;
   };
+  // 获取URL参数
+  const userParams = extractParams(location.href);
   useEffect(() => {
     if (authenticating || !pSettings) return;
 
@@ -86,8 +87,7 @@ export default memo(function Socket() {
       session.socket.removeAllListeners();
       session.socket.close();
     }
-    // 获取URL参数
-    const userParams = extractParams(location.href);
+    userParams['x-chainlit-session-id'] = sessionId
     const socket = io(wsEndpoint, {
       path: '/ws/socket.io',
       extraHeaders: {
@@ -140,6 +140,10 @@ export default memo(function Socket() {
           ];
         }
       });
+      // 页面间消息广播
+      message['chat_id'] = userParams.chat_id
+      const chainlitNewMessage = new BroadcastChannel('chainlit_new_message');
+      chainlitNewMessage.postMessage(message);
     });
 
     socket.on('update_message', (message: IMessageUpdate) => {
@@ -201,6 +205,11 @@ export default memo(function Socket() {
     socket.on('ask', ({ msg, spec }, callback) => {
       setAskUser({ spec, callback });
       setMessages((oldMessages) => [...oldMessages, msg]);
+      setLoading(false);
+    });
+
+    socket.on('enable_file_upload', (spec) => {
+      setFileSpecState(spec);
       setLoading(false);
     });
 

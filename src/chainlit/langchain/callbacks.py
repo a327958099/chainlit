@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
@@ -9,11 +10,11 @@ from chainlit.message import ErrorMessage, Message
 from chainlit.prompt import Prompt, PromptMessage
 from chainlit.sync import run_sync
 
-IGNORE_LIST = ["AgentExecutor"]
+IGNORE_LIST = []  # type: List[str]
 DEFAULT_ANSWER_PREFIX_TOKENS = ["Final", "Answer", ":"]
 
 
-def get_llm_settings(invocation_params: Union[Dict, None]):
+def get_llm_settings(invocation_params: Union[Dict, None], serialized: Dict[str, Any]):
     if invocation_params is None:
         return None, None
 
@@ -23,42 +24,64 @@ def get_llm_settings(invocation_params: Union[Dict, None]):
         model_name = invocation_params.pop("model_name")
         invocation_params["model"] = model_name
 
-    return provider, invocation_params
+    model_kwargs = invocation_params.pop("model_kwargs", {})
+
+    merged = {
+        **invocation_params,
+        **model_kwargs,
+        **serialized.get("kwargs", {}),
+    }
+
+    # make sure there is no api key specification
+    settings = {k: v for k, v in merged.items() if not k.endswith("_api_key")}
+
+    return provider, settings
 
 
 def build_prompt(serialized: Dict[str, Any], inputs: Dict[str, Any]):
-    inputs = {k: str(v) for (k, v) in inputs.items()}
     prompt_params = serialized.get("kwargs", {}).get("prompt", {}).get("kwargs", {})
-
     _messages = prompt_params.get("messages")
 
     if _messages:
         messages = []
         for m in _messages:
-            m_prompt_params = m.get("kwargs", {}).get("prompt", {}).get("kwargs", {})
-            m_template = m_prompt_params.get("template")
-            m_template_format = m_prompt_params.get("template_format")
-            messages += [
-                PromptMessage(
-                    template=m_template,
-                    template_format=m_template_format,
-                    role=convert_role(m["id"][-1]),
+            class_name = m["id"][-1]
+            # A placeholder holds a variable that itself is a list of messages, like chat_history
+            if class_name == "MessagesPlaceholder":
+                variable_name = m.get("kwargs", {}).get("variable_name")  # type: str
+                variable = inputs.get(variable_name, [])
+                placeholder_size = len(variable)
+                if placeholder_size:
+                    messages += [PromptMessage(placeholder_size=placeholder_size)]
+            else:
+                m_prompt_params = (
+                    m.get("kwargs", {}).get("prompt", {}).get("kwargs", {})
                 )
-            ]
+                m_template = m_prompt_params.get("template")
+                m_template_format = m_prompt_params.get("template_format")
+                messages += [
+                    PromptMessage(
+                        template=m_template,
+                        template_format=m_template_format,
+                        role=convert_role(class_name),
+                    )
+                ]
     else:
         messages = None
 
     template = prompt_params.get("template")
     template_format = prompt_params.get("template_format")
 
+    stringified_inputs = inputs = {k: str(v) for (k, v) in inputs.items()}
+
     if template:
         return Prompt(
             template=template,
             template_format=template_format,
-            inputs=inputs,
+            inputs=stringified_inputs,
         )
     elif messages:
-        return Prompt(inputs=inputs, messages=messages)
+        return Prompt(inputs=stringified_inputs, messages=messages)
 
 
 def convert_role(role: str):
@@ -72,6 +95,20 @@ def convert_role(role: str):
         return "function"
     else:
         raise ValueError(f"Unsupported role {role}")
+
+
+def convert_message(message: BaseMessage, template: Optional[str] = None):
+    function_call = message.additional_kwargs.get("function_call")
+    if function_call:
+        content = json.dumps(function_call, indent=4)
+    else:
+        content = message.content
+    return PromptMessage(
+        name=getattr(message, "name", None),
+        role=convert_role(message.type),
+        template=template,
+        formatted=content,
+    )
 
 
 class BaseLangchainCallbackHandler(BaseCallbackHandler):
@@ -244,30 +281,61 @@ def _on_chat_model_start(
     **kwargs: Any,
 ):
     invocation_params = kwargs.get("invocation_params")
-    provider, settings = get_llm_settings(invocation_params)
+    provider, settings = get_llm_settings(invocation_params, serialized)
+
+    formatted_messages = messages[0]
 
     if self.current_prompt:
         self.current_prompt.provider = provider
         self.current_prompt.settings = settings
+        # Chat mode
         if self.current_prompt.messages:
-            for idx, m in enumerate(messages[0]):
-                self.current_prompt.messages[idx].formatted = m.content
-                self.current_prompt.messages[idx].role = convert_role(m.type)
-
+            # This is needed to compute the correct message index to read
+            placeholder_offset = 0
+            # The final list of messages
+            prompt_messages = []
+            # Looping the messages built in build_prompt
+            # They only contain the template
+            for templated_index, templated_message in enumerate(
+                self.current_prompt.messages
+            ):
+                # If a message has a placeholder size, we need to replace it
+                # With the N following messages, where N is the placeholder size
+                if templated_message.placeholder_size:
+                    for _ in range(templated_message.placeholder_size):
+                        formatted_message = formatted_messages[
+                            templated_index + placeholder_offset
+                        ]
+                        prompt_messages += [convert_message(formatted_message)]
+                        # Increment the placeholder offset
+                        placeholder_offset += 1
+                    # Finally, decrement the placeholder offset by one
+                    # Because the message representing the placeholder is now consumed
+                    placeholder_offset -= 1
+                # The current message is not a placeholder
+                else:
+                    formatted_message = formatted_messages[
+                        templated_index + placeholder_offset
+                    ]
+                    # Update the role and formatted value, keep the template
+                    prompt_messages += [
+                        convert_message(
+                            formatted_message, template=templated_message.template
+                        )
+                    ]
+            # Finally set the prompt messages
+            self.current_prompt.messages = prompt_messages
+        # Non chat mode
         elif self.current_prompt.template:
             unique_message = messages[0][0]
-            prompt_message = PromptMessage(
-                template=self.current_prompt.template,
-                formatted=unique_message.content,
-                role=convert_role(unique_message.type),
+            prompt_message = convert_message(
+                unique_message, template=self.current_prompt.template
             )
             self.current_prompt.messages = [prompt_message]
             self.current_prompt.template = None
+    # No current prompt, create it (formatted only)
     else:
-        prompt_messages = [
-            PromptMessage(formatted=m.content, role=convert_role(m.type))
-            for m in messages[0]
-        ]
+        prompt_messages = [convert_message(m) for m in messages[0]]
         self.prompt_sequence.append(
             Prompt(
                 messages=prompt_messages,
@@ -284,7 +352,7 @@ def _on_llm_start(
     **kwargs: Any,
 ) -> None:
     invocation_params = kwargs.get("invocation_params")
-    provider, settings = get_llm_settings(invocation_params)
+    provider, settings = get_llm_settings(invocation_params, serialized)
 
     if self.current_prompt:
         self.current_prompt.formatted = prompts[0]

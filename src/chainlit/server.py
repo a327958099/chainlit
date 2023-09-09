@@ -11,12 +11,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import (
-    FileResponse,
-    HTMLResponse,
-    JSONResponse,
-    PlainTextResponse,
-)
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi_socketio import SocketManager
 from starlette.middleware.cors import CORSMiddleware
@@ -30,6 +25,7 @@ from chainlit.config import DEFAULT_HOST, config, load_module, reload_config
 from chainlit.logger import logger
 from chainlit.markdown import get_markdown_str
 from chainlit.playground.config import get_llm_providers
+from chainlit.telemetry import trace_event
 from chainlit.types import (
     CompletionRequest,
     DeleteConversationRequest,
@@ -125,7 +121,10 @@ app = FastAPI(lifespan=lifespan)
 app.mount("/public", StaticFiles(directory="public", check_dir=False), name="public")
 app.mount(
     "/assets",
-    StaticFiles(packages=[("chainlit", os.path.join(build_dir, "assets"))]),
+    StaticFiles(
+        packages=[("chainlit", os.path.join(build_dir, "assets"))],
+        follow_symlink=config.project.follow_symlink,
+    ),
     name="assets",
 )
 
@@ -198,6 +197,7 @@ async def completion(request: CompletionRequest):
             detail=f"LLM provider '{request.prompt.provider}' not found",
         )
 
+    trace_event("pp_create_completion")
     response = await provider.create_completion(request)
 
     return response
@@ -206,6 +206,7 @@ async def completion(request: CompletionRequest):
 @app.get("/project/llm-providers")
 async def get_providers():
     """List the providers."""
+    trace_event("pp_get_llm_providers")
     providers = get_llm_providers()
     providers = [p.to_dict() for p in providers]
     return JSONResponse(content={"providers": providers})
@@ -251,7 +252,7 @@ async def get_member_role(request: Request):
 
     auth_client = await get_auth_client_from_request(request)
     role = auth_client.user_infos["role"] if auth_client.user_infos else "ANONYMOUS"
-    return PlainTextResponse(content=role)
+    return JSONResponse(content=role)
 
 
 @app.post("/project/conversations")

@@ -48,6 +48,12 @@ user_env = []
 # Duration (in seconds) during which the session is saved when the connection is lost
 session_timeout = 3600
 
+# Enable third parties caching (e.g LangChain cache)
+cache = false
+
+# Follow symlink for asset mount (see https://github.com/Chainlit/chainlit/issues/317)
+# follow_symlink = false
+
 # Chainlit server address
 # chainlit_server = ""
 
@@ -153,6 +159,7 @@ class CodeSettings:
     on_stop: Optional[Callable[[], Any]] = None
     on_chat_start: Optional[Callable[[], Any]] = None
     on_message: Optional[Callable[[str], Any]] = None
+    on_file_upload: Optional[Callable[[str], Any]] = None
     auth_client_factory: Optional[
         Callable[[Optional[Dict[str, str]], Optional[Headers]], "BaseAuthClient"]
     ] = None
@@ -197,6 +204,10 @@ class ProjectSettings(DataClassJsonMixin):
     local_fs_path: Optional[str] = None
     # Duration (in seconds) during which the session is saved when the connection is lost
     session_timeout: int = 3600
+    # Enable third parties caching (e.g LangChain cache)
+    cache: bool = False
+    # Follow symlink for asset mount (see https://github.com/Chainlit/chainlit/issues/317)
+    follow_symlink: bool = False
     # Chainlit server address
     chainlit_server: Optional[str] = None
 

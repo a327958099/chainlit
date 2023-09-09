@@ -1,6 +1,9 @@
+import functools
 import importlib
 import inspect
 from typing import Callable
+
+from packaging import version
 
 from chainlit.context import context
 from chainlit.logger import logger
@@ -18,6 +21,7 @@ def wrap_user_function(user_function: Callable, with_task=False) -> Callable:
         Callable: The wrapped function.
     """
 
+    @functools.wraps(user_function)
     async def wrapper(*args):
         # Get the parameter names of the user-defined function
         user_function_params = list(inspect.signature(user_function).parameters.keys())
@@ -63,3 +67,22 @@ def make_module_getattr(registry):
         return getattr(module, name)
 
     return __getattr__
+
+
+def check_module_version(name, required_version):
+    """
+    Check the version of a module.
+
+    Args:
+        name (str): A module name.
+        version (str): Minimum version.
+
+    Returns:
+        (bool): Return True if the module is installed and the version
+            match the minimum required version.
+    """
+    try:
+        module = importlib.import_module(name)
+    except ModuleNotFoundError:
+        return False
+    return version.parse(module.__version__) >= version.parse(required_version)

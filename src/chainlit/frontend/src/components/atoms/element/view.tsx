@@ -5,9 +5,11 @@ import { useRecoilValue } from 'recoil';
 import { Box, Typography } from '@mui/material';
 
 import { useQuery } from 'hooks/query';
+import { useApi } from 'hooks/useApi';
 
-import { clientState } from 'state/client';
-import { IMessageElement, elementState } from 'state/element';
+import { elementState } from 'state/element';
+
+import { IMessageElement } from 'types/element';
 
 import AudioElement from './audio';
 import FileElement from './file';
@@ -33,31 +35,29 @@ export const renderElement = (element: IMessageElement): JSX.Element | null => {
   }
 };
 
+// TODO: Double check if we get the right element from API
 const ElementView = () => {
   const { id } = useParams();
   const query = useQuery();
 
   const elements = useRecoilValue(elementState);
-  const client = useRecoilValue(clientState);
-
-  const [error, setError] = useState<string | undefined>();
   const [element, setElement] = useState<IMessageElement | null>(null);
 
   const conversationId = query.get('conversation');
 
-  if (!element && id) {
-    if (!conversationId) {
-      const foundElement = elements.find((element) => element.id === id);
-      if (foundElement) {
-        setElement(foundElement);
-      }
-    } else {
-      client
-        .getElement(conversationId, id)
-        .then(setElement)
-        .catch((err) => {
-          setError(err.message);
-        });
+  const { data, error } = useApi<IMessageElement>(
+    id && conversationId
+      ? `/project/conversation/${conversationId}/element/${id}`
+      : null
+  );
+
+  if (data) {
+    setElement(data);
+  } else if (id && !conversationId && !element) {
+    const foundElement = elements.find((element) => element.id === id);
+
+    if (foundElement) {
+      setElement(foundElement);
     }
   }
 

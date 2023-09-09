@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import BaseCallbackHandler
@@ -8,7 +9,6 @@ from chainlit.context import context_var
 from chainlit.element import Text
 from chainlit.message import Message
 from chainlit.prompt import Prompt, PromptMessage
-from chainlit.sync import run_sync
 
 DEFAULT_IGNORE = [
     CBEventType.CHUNKING,
@@ -52,16 +52,24 @@ class LlamaIndexCallbackHandler(BaseCallbackHandler):
             return root_message.id
         return None
 
-    def start_trace(self, trace_id: Optional[str] = None) -> None:
+    def on_event_start(
+        self,
+        event_type: CBEventType,
+        payload: Optional[Dict[str, Any]] = None,
+        event_id: str = "",
+        **kwargs: Any,
+    ) -> str:
         """Run when an event starts and return id of event."""
         self._restore_context()
-        run_sync(
+        asyncio.run(
             Message(
-                author=trace_id or "llama_index",
-                parent_id=self._get_parent_id(),
                 content="",
+                author=event_type,
+                parent_id=self._get_parent_id(),
             ).send()
         )
+
+        return event_id
 
     def on_event_end(
         self,
@@ -88,7 +96,7 @@ class LlamaIndexCallbackHandler(BaseCallbackHandler):
                 )
                 content = f"Retrieved the following sources: {source_refs}"
 
-                run_sync(
+                asyncio.run(
                     Message(
                         content=content,
                         author=event_type,
@@ -119,7 +127,7 @@ class LlamaIndexCallbackHandler(BaseCallbackHandler):
             else:
                 content = ""
 
-            run_sync(
+            asyncio.run(
                 Message(
                     content=content,
                     author=event_type,
@@ -135,5 +143,5 @@ class LlamaIndexCallbackHandler(BaseCallbackHandler):
     def _noop(self, *args, **kwargs):
         pass
 
-    on_event_start = _noop
+    start_trace = _noop
     end_trace = _noop

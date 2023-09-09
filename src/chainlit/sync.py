@@ -22,8 +22,10 @@ T = TypeVar("T")
 
 
 def run_sync(co: Coroutine[Any, Any, T_Retval]) -> T_Retval:
+    """Run the coroutine synchronously."""
+    # Execute from the main thread in the main event loop
     if threading.current_thread() == threading.main_thread():
         return sync(co)
-    else:
+    else:  # Execute from a thread in the main event loop
         result = asyncio.run_coroutine_threadsafe(co, loop=context.loop)
         return result.result()

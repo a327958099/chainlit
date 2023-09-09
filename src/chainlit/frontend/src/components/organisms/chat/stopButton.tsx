@@ -14,7 +14,6 @@ export default function StopButton() {
   if (!loading) {
     return null;
   }
-
   const handleClick = () => {
     setLoading(false);
     session?.socket.emit('stop');

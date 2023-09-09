@@ -15,6 +15,7 @@ import {
 import { chatHistoryState } from 'state/chatHistory';
 
 import HistoryButton from '../history';
+import UploadButton from '../message/UploadButton';
 
 interface Props {
   onSubmit: (message: string) => void;
@@ -43,6 +44,32 @@ const Input = ({ onSubmit, onReply }: Props) => {
   const socketOk = session?.socket && !session?.error;
   const disabled = !socketOk || loading || askUser?.spec.type === 'file';
 
+  // 把URL参数转换成对象
+  const extractParams = (url: string) => {
+    const params: { [key: string]: string | null } = {};
+    if (url.includes('?')) {
+      const query_string = url.split('?')[1];
+      const pairs = query_string.split('&');
+      for (const pair of pairs) {
+        if (pair.includes('=')) {
+          const key_value = pair.split('=');
+          if (key_value.length > 1) {
+            const key = key_value[0];
+            const value = key_value[1];
+            params[key] = value;
+          } else {
+            params[pair] = null;
+          }
+        } else {
+          params[pair] = null;
+        }
+      }
+    }
+    return params;
+  };
+  // 获取URL参数
+  const userParams = extractParams(location.href);
+
   useEffect(() => {
     if (ref.current && !loading && !disabled) {
       ref.current.focus();
@@ -59,6 +86,13 @@ const Input = ({ onSubmit, onReply }: Props) => {
       onSubmit(value);
     }
     setValue('');
+    // 页面间消息广播
+    const chainlitPostMessage = new BroadcastChannel('chainlit_post_message');
+    chainlitPostMessage.postMessage({
+      chat_id : userParams.chat_id,
+      content: value,
+    });
+
   }, [value, disabled, setValue, askUser, onSubmit]);
 
   const handleCompositionStart = () => {
@@ -104,6 +138,7 @@ const Input = ({ onSubmit, onReply }: Props) => {
         </IconButton>
       )}
       <HistoryButton onClick={onHistoryClick} />
+      <UploadButton />
     </>
   );
 
@@ -121,7 +156,7 @@ const Input = ({ onSubmit, onReply }: Props) => {
       multiline
       variant="standard"
       autoComplete="false"
-      placeholder="在在此处输入您的消息..."
+      placeholder="在此输入您的问题,请尽量使用专业的法律名词..."
       disabled={disabled}
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={handleKeyDown}
@@ -153,7 +188,6 @@ const Input = ({ onSubmit, onReply }: Props) => {
         borderRadius: 1,
         border: (theme) => `0px solid ${theme.palette.divider}`,
         boxShadow: 'box-shadow: 0px 2px 4px 0px #0000000D',
-
         textarea: {
           fontSize: '14px',
           height: '34px',

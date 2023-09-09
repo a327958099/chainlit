@@ -6,12 +6,21 @@ from pydantic.dataclasses import dataclass
 
 from chainlit.prompt import Prompt
 
-InputWidgetType = Literal["switch", "slider", "select", "textinput", "tags"]
+InputWidgetType = Literal[
+    "switch", "slider", "select", "textinput", "tags", "numberinput"
+]
 ElementType = Literal[
     "image", "avatar", "text", "pdf", "tasklist", "audio", "video", "file"
 ]
 ElementDisplay = Literal["inline", "side", "page"]
 ElementSize = Literal["small", "medium", "large"]
+
+
+@dataclass
+class FileSpec(DataClassJsonMixin):
+    accept: Union[List[str], Dict[str, List[str]]]
+    max_files: int
+    max_size_mb: int
 
 
 @dataclass
@@ -23,12 +32,8 @@ class AskSpec(DataClassJsonMixin):
 
 
 @dataclass
-class AskFileSpec(AskSpec, DataClassJsonMixin):
-    """Specification for asking the user for a file."""
-
-    accept: Union[List[str], Dict[str, List[str]]]
-    max_files: int
-    max_size_mb: int
+class AskFileSpec(FileSpec, AskSpec, DataClassJsonMixin):
+    """Specification for asking the user a file."""
 
 
 class AskResponse(TypedDict):
