@@ -86,13 +86,18 @@ const Input = ({ onSubmit, onReply }: Props) => {
       onSubmit(value);
     }
     setValue('');
-    // 页面间消息广播
-    const chainlitPostMessage = new BroadcastChannel('chainlit_post_message');
-    chainlitPostMessage.postMessage({
-      chat_id : userParams.chat_id,
-      content: value,
-    });
-
+    // 缓存消息内容
+    const storage_key = `post_${userParams.chat_id}`
+    if(localStorage.getItem(storage_key) == '1'){
+      localStorage.setItem(
+        storage_key,
+        JSON.stringify({
+          chat_id: userParams.chat_id,
+          content: value
+        })
+      );
+    }
+    
   }, [value, disabled, setValue, askUser, onSubmit]);
 
   const handleCompositionStart = () => {
@@ -143,7 +148,12 @@ const Input = ({ onSubmit, onReply }: Props) => {
   );
 
   const endAdornment = (
-    <IconButton size="small" disabled={disabled} color="inherit" onClick={() => submit()}>
+    <IconButton
+      size="small"
+      disabled={disabled}
+      color="inherit"
+      onClick={() => submit()}
+    >
       <SendIcon />
     </IconButton>
   );
