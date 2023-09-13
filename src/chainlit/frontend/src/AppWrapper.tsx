@@ -23,8 +23,8 @@ export default function AppWrapper() {
     setPSettings(data);
     setAppSettings((prev) => ({
       ...prev,
-      // expandAll: !!data.ui.default_expand_messages,
-      // hideCot: !!data.ui.hide_cot
+      expandAll: !!data.ui.default_expand_messages,
+      hideCot: !!data.ui.hide_cot
     }));
   }, [data]);
 
