@@ -22,6 +22,86 @@ import NewChatButton from 'components/molecules/newChatButton';
 
 import { projectSettingsState } from 'state/project';
 
+// 把URL参数转换成对象
+const extractParams = (url: string) => {
+  const params: { [key: string]: string | null } = {};
+  if (url.includes('?')) {
+    const query_string = url.split('?')[1];
+    const pairs = query_string.split('&');
+    for (const pair of pairs) {
+      if (pair.includes('=')) {
+        const key_value = pair.split('=');
+        if (key_value.length > 1) {
+          const key = key_value[0];
+          const value = key_value[1];
+          params[key] = value;
+        } else {
+          params[pair] = null;
+        }
+      } else {
+        params[pair] = null;
+      }
+    }
+  }
+  return params;
+};
+// 获取URL参数
+const userParams = extractParams(location.href);
+/**
+ * 链接socket
+ */
+// 将对象挂载到 window 对象
+declare global {
+  interface Window {
+    globalObject: {
+      SocketTask: object | any;
+      userParams: object | any;
+    };
+  }
+}
+window.globalObject = {
+  SocketTask: null,
+  userParams:userParams
+}
+
+let timeT: string | number | null | any = null;
+const connectSocket = () => {
+  if (window.globalObject.SocketTask) {
+    return;
+  }
+  window.globalObject.SocketTask = new WebSocket(
+    `wss://ws.expressolawmind.com/api/v1/ws?token=${userParams.token}&client=2`
+  );
+ 
+  // 连接打开时的回调函数
+  window.globalObject.SocketTask.onopen = () => {
+    console.log('Chainlit WebSocket 连接已打开');
+    window.globalObject.SocketTask.send(JSON.stringify({ code: 211 }));
+  };
+
+  // 连接关闭时的回调函数
+  window.globalObject.SocketTask.onclose = () => {
+    console.log('Chainlit WebSocket 连接已关闭');
+    window.globalObject.SocketTask = null;
+    timeT = null;
+    // 链接重试
+    timeT = setInterval(() => {
+      if (window.globalObject.SocketTask) {
+        clearInterval(timeT);
+      } else {
+        connectSocket();
+      }
+    }, 2000);
+  };
+};
+connectSocket();
+// 10分钟定时心跳
+setInterval(() => {
+  if (window.globalObject.SocketTask) {
+    window.globalObject.SocketTask.send(JSON.stringify({ code: 211 }));
+  }
+}, 1000 * 60 * 10);
+
 interface INavItem {
   to: string;
   label: string;

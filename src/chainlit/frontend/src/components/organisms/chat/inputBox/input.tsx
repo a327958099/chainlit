@@ -44,32 +44,6 @@ const Input = ({ onSubmit, onReply }: Props) => {
   const socketOk = session?.socket && !session?.error;
   const disabled = !socketOk || loading || askUser?.spec.type === 'file';
 
-  // 把URL参数转换成对象
-  const extractParams = (url: string) => {
-    const params: { [key: string]: string | null } = {};
-    if (url.includes('?')) {
-      const query_string = url.split('?')[1];
-      const pairs = query_string.split('&');
-      for (const pair of pairs) {
-        if (pair.includes('=')) {
-          const key_value = pair.split('=');
-          if (key_value.length > 1) {
-            const key = key_value[0];
-            const value = key_value[1];
-            params[key] = value;
-          } else {
-            params[pair] = null;
-          }
-        } else {
-          params[pair] = null;
-        }
-      }
-    }
-    return params;
-  };
-  // 获取URL参数
-  const userParams = extractParams(location.href);
-
   useEffect(() => {
     if (ref.current && !loading && !disabled) {
       ref.current.focus();
@@ -86,16 +60,24 @@ const Input = ({ onSubmit, onReply }: Props) => {
       onSubmit(value);
     }
     setValue('');
-    // 缓存消息内容
-    const storage_key = `post_${userParams.chat_id}`
-    if(localStorage.getItem(storage_key) == '1'){
-      localStorage.setItem(
-        storage_key,
-        JSON.stringify({
-          chat_id: userParams.chat_id,
-          content: value
-        })
-      );
+    // 发送ws消息
+    // eslint-disable-next-line no-prototype-builtins
+    if (
+      typeof window.globalObject !== 'undefined' &&
+      // eslint-disable-next-line no-prototype-builtins
+      window.globalObject.hasOwnProperty('SocketTask')
+    ) {
+      if (window.globalObject.SocketTask) {
+        window.globalObject.SocketTask.send(
+          JSON.stringify({
+            code: 1000,
+            data: {
+              chat_id: window.globalObject.userParams.chat_id,
+              content: value
+            }
+          })
+        );
+      }
     }
     
   }, [value, disabled, setValue, askUser, onSubmit]);

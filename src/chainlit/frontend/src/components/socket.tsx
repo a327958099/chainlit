@@ -141,16 +141,16 @@ export default memo(function Socket() {
         }
       });
       // 缓存消息内容
-      const storage_key = `get_${userParams.chat_id}`
-      if(localStorage.getItem(storage_key) == '1'){
-        localStorage.setItem(
-          storage_key,
-          JSON.stringify({
-            chat_id: userParams.chat_id,
-            content: message.content
-          })
-        );
-      }
+      // const storage_key = `get_${userParams.chat_id}`
+      // if(localStorage.getItem(storage_key) == '1'){
+      //   localStorage.setItem(
+      //     storage_key,
+      //     JSON.stringify({
+      //       chat_id: userParams.chat_id,
+      //       content: message.content
+      //     })
+      //   );
+      // }
     });
 
     socket.on('update_message', (message: IMessageUpdate) => {
