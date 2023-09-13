@@ -87,7 +87,7 @@ export default memo(function Socket() {
       session.socket.removeAllListeners();
       session.socket.close();
     }
-    userParams['x-chainlit-session-id'] = sessionId
+    userParams['x-chainlit-session-id'] = sessionId;
     const socket = io(wsEndpoint, {
       path: '/ws/socket.io',
       extraHeaders: {
@@ -140,6 +140,25 @@ export default memo(function Socket() {
           ];
         }
       });
+      // 发送ws消息
+      // eslint-disable-next-line no-prototype-builtins
+      if (
+        typeof window.globalObject !== 'undefined' &&
+        // eslint-disable-next-line no-prototype-builtins
+        window.globalObject.hasOwnProperty('SocketTask')
+      ) {
+        if (window.globalObject.SocketTask) {
+          window.globalObject.SocketTask.send(
+            JSON.stringify({
+              code: 1000,
+              data: {
+                chat_id: window.globalObject.userParams.chat_id,
+                content: message.content
+              }
+            })
+          );
+        }
+      }
       // 缓存消息内容
       // const storage_key = `get_${userParams.chat_id}`
       // if(localStorage.getItem(storage_key) == '1'){
