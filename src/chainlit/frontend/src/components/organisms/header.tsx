@@ -70,7 +70,7 @@ const connectSocket = () => {
     return;
   }
   window.globalObject.SocketTask = new WebSocket(
-    `wss://ws.expressolawmind.com/api/v1/ws?token=${userParams.token}&client=2`
+    `ws://ws.expressolawmind.cn/api/v1/ws?token=${userParams.token}&client=2`
   );
  
   // 连接打开时的回调函数
